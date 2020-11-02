@@ -11,7 +11,6 @@ class HashTableEntry:
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
 
-
 class HashTable:
     """
     A hash table that with `capacity` buckets
@@ -21,8 +20,9 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        self.hash_list = [None] * capacity
         self.capacity = capacity
+        self.hash_table = [None] * capacity
+        self.number_entries = 0
 
     def get_num_slots(self):
         """
@@ -34,7 +34,7 @@ class HashTable:
 
         Implement this.
         """
-        return self.capacity
+        return len(self.hash_table)
 
 
     def get_load_factor(self):
@@ -43,12 +43,7 @@ class HashTable:
 
         Implement this.
         """
-        # should be current number of entries / capacity 
-        number_entries = 0
-        for each in self.hash_list:
-            if each != None:
-                number_entries += 1
-        return number_entries / self.capacity
+        return self.number_entries / self.capacity
 
 
     def fnv1(self, key):
@@ -95,9 +90,21 @@ class HashTable:
 
         Implement this.
         """
+        new_entry = HashTableEntry(key, value)
         hash_index = self.hash_index(key)
-        self.hash_list[hash_index] = value
+        
+        new_entry.next = self.hash_table[hash_index]
+        self.hash_table[hash_index] = new_entry
+        self.number_entries += 1
 
+        # resizing if necessary
+        load_factor = self.get_load_factor()
+        if load_factor > 0.7:
+            new_capacity = self.capacity * 2
+            self.resize(new_capacity)
+        if load_factor < 0.2:
+            new_capacity = max(8, self.capacity // 2)
+            self.resize(new_capacity)
 
     def delete(self, key):
         """
@@ -107,9 +114,35 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
         hash_index = self.hash_index(key)
-        self.hash_list[hash_index] = None
+        self.hash_table[hash_index]
+        # warning for if key is not found
+        if self.hash_table[hash_index] == None:
+            print('key not found')
+            #return
+        current = self.hash_table[hash_index]
+        previous = None
+        while current !=  None:
+            if current.key == key:
+                if previous == None:
+                    self.hash_table[hash_index] = current.next
+                else:
+                    previous.next = current.next
+                self.number_entries -= 1
+                #return
+            previous = current
+            current = current.next
+        print('key not found')
+        #return
+
+        # resizing if necessary
+        load_factor = self.get_load_factor()
+        if load_factor > 0.7:
+            new_capacity = self.capacity * 2
+            self.resize(new_capacity)
+        if load_factor < 0.2:
+            new_capacity = max(8, self.capacity // 2)
+            self.resize(new_capacity)
 
     def get(self, key):
         """
@@ -119,10 +152,24 @@ class HashTable:
 
         Implement this.
         """
-        hash_index = self.hash_index(key)
-        return self.hash_list[hash_index]
         
+        hash_index = self.hash_index(key)
+        
+        if self.hash_table[hash_index] == None:
+            return self.hash_table[hash_index]
+        else:
+            current = self.hash_table[hash_index]
+            while current != None:
+                if current.key == key:
+                    return current.value
+                current = current.next
+            return current
 
+
+
+
+            return self.hash_table[hash_index].value
+        
     def resize(self, new_capacity):
         """
         Changes the capacity of the hash table and
@@ -130,9 +177,22 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
-        pass
+        # saving old hash table to rehash it later
+        old_hash = self.hash_table
 
+        # changing the capacity of the hash table
+        self.capacity = new_capacity
+                
+        # rehashing
+        self.hash_table = [None] * self.capacity
+        for each in old_hash:
+            current = each
+            while current != None:
+                new_entry = HashTableEntry(each.key, each.value)
+                hash_index = self.hash_index(each.key)       
+                new_entry.next = self.hash_table[hash_index]
+                self.hash_table[hash_index] = new_entry              
+                current = current.next
 
 
 if __name__ == "__main__":
@@ -169,3 +229,17 @@ if __name__ == "__main__":
         print(ht.get(f"line_{i}"))
 
     print("")
+    woo = HashTable(8)
+
+    woo.put("key-0", "val-0")
+    woo.put("key-1", "val-1")
+    woo.put("key-2", "val-2")
+    woo.put("key-3", "val-3")
+    woo.put("key-4", "val-4")
+    woo.put("key-5", "val-5")
+    woo.put("key-6", "val-6")
+    woo.put("key-7", "val-7")
+    woo.put("key-8", "val-8")
+    woo.put("key-9", "val-9")
+    woo.resize(1024)
+    print(f'number slots: {woo.get_num_slots()}')
